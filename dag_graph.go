@@ -9,7 +9,9 @@ type Graph struct {
 	EdgesNum int
 	IsDag bool
 	Visited []int
-	TaskRunMap map[string][]string
+	ParallelRunRawMap map[string][]string
+	ParallelRunFinalMap map[string][][]string
+	
 }
 
 func (g *Graph) indexOfNodes(node string) int {
@@ -121,7 +123,7 @@ func (g *Graph) forEach() []string {
 	return result
 }
 
-func(g *Graph) taskRunStartNodesList() {
+func(g *Graph) getParallelRunStartNodesList() {
 	startNodeList := make([]string,0)
 	for i:=0;i<len(g.Nodes);i++ {
 		count :=0
@@ -133,42 +135,78 @@ func(g *Graph) taskRunStartNodesList() {
 		}
 	}
 	for _,v := range startNodeList {
-		g.TaskRunMap[v] = make([]string,0)
+		g.ParallelRunRawMap[v] = make([]string,0)
 	}
 }
 
-func(g *Graph) taskRunList() {
-	for k, v := range  g.TaskRunMap {
-		g.getTaskRunListForEach(k,&v)
-		g.TaskRunMap[k] = append(g.TaskRunMap[k],k)
-		g.TaskRunMap[k] = append(g.TaskRunMap[k],v...)
-		
+func(g *Graph) getParallelRunRawLists() {
+	for k, v := range  g.ParallelRunRawMap {
+		g.getParallelRunRawListForEachNode(k,&v)
+		g.ParallelRunRawMap[k] = append(g.ParallelRunRawMap[k],k)
+		g.ParallelRunRawMap[k] = append(g.ParallelRunRawMap[k],v...)
 	}
-	fmt.Println(g.TaskRunMap)
 }
 
-func(g *Graph) getTaskRunListForEach(node string,taskList *[]string) {
+func(g *Graph) getParallelRunRawListForEachNode(node string,taskList *[]string) {
 	index := g.indexOfNodes(node)
 	for i:=0;i<len(g.Nodes);i++ {
 		if g.Edges[index][i] != 0 {
 			*taskList = append(*taskList, g.Nodes[i])
-			g.getTaskRunListForEach(g.Nodes[i], taskList)
+			g.getParallelRunRawListForEachNode(g.Nodes[i], taskList)
 		}
 	}
-	
 }
+
+func (g *Graph) getParallFinalLists() {
+	g.getParallelRunStartNodesList()
+	g.getParallelRunRawLists()
+	for k,v := range g.ParallelRunRawMap {
+		var tempNodes = []int{}
+		for i, j := range v {
+			if g.Edges[g.indexOfNodes(v[0])][g.indexOfNodes(j)] == 1 {
+				tempNodes  = append(tempNodes, i)
+			}
+		}
+		var tempParallelRunLists = make([][]string,0)
+		if len(tempNodes) == 1 {
+			tempParallelRunLists = append(tempParallelRunLists, v)
+		} else {
+			for i:=0;i<len(tempNodes);i++ {
+				if i == 0 {
+					tempParallelRunLists = append(tempParallelRunLists, v[:tempNodes[i+1]])
+				} else if i < len(tempNodes) -1 {
+					var tempList = make([]string,0)
+					tempList = append(tempList, v[0])
+					tempList = append(tempList, v[tempNodes[i]:tempNodes[i+1]]...)
+					tempParallelRunLists = append(tempParallelRunLists,tempList)
+					
+				} else if i == len(tempNodes) -1 {
+					var tempList = make([]string,0)
+					tempList = append(tempList, v[0])
+					tempList = append(tempList, v[tempNodes[i]:len(v)]...)
+					tempParallelRunLists = append(tempParallelRunLists,tempList)
+				}
+			}
+		}
+		g.ParallelRunFinalMap[k] = tempParallelRunLists
+	}
+}
+
 
 func newGraph() *Graph {
 	nodes := make([]string,0)
 	edges := make([][]int,0)
 	visited := make([]int, 0)
-	taskRunMap := make(map[string][]string)
+	parallelRunRawMap := make(map[string][]string)
+	parallelRunFinalMap := make(map[string][][]string)
+	
 	return &Graph{
 		Nodes: nodes,
 		Edges: edges,
 		IsDag: true,
 		Visited: visited,
-		TaskRunMap: taskRunMap,
+		ParallelRunRawMap: parallelRunRawMap,
+		ParallelRunFinalMap: parallelRunFinalMap,
 	}
 }
 
@@ -194,9 +232,14 @@ func main() {
 	g.addEdge("e", "f")
 	g.addEdge("f", "k")
 	g.addEdge("k", "g")
+	g.addEdge("a","g")
+	g.addEdge("g","j")
+	g.addEdge("h","i")
+	g.addEdge("a","i")
+	
+	g.getParallFinalLists()
+	fmt.Println(g.ParallelRunFinalMap)
+	fmt.Println(g.ParallelRunRawMap)
 	
 	
-	g.taskRunStartNodesList()
-	g.taskRunList()
-	fmt.Println(g.TaskRunMap)
 }
