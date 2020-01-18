@@ -212,7 +212,7 @@ func newGraph() *Graph {
 
 func main() {
 	g := newGraph()
-	// 添加顶点
+	// add node
 	g.addNode("a")
 	g.addNode("b")
 	g.addNode("c")
@@ -223,9 +223,8 @@ func main() {
 	g.addNode("h")
 	g.addNode("i")
 	g.addNode("j")
-	// 默认初始化10个顶点，此处扩容一次
 	g.addNode("k")
-	// 添加边
+	// add edge
 	g.addEdge("a", "b")
 	g.addEdge("b", "c")
 	g.addEdge("c", "d")
@@ -238,6 +237,7 @@ func main() {
 	g.addEdge("a","i")
 	
 	g.getParallFinalLists()
+	fmt.Println(g.IsDag)
 	fmt.Println(g.ParallelRunFinalMap)
 	fmt.Println(g.ParallelRunRawMap)
 	
